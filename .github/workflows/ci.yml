@@ -18,6 +18,8 @@ jobs:
       - uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5
         with:
           persist-credentials: false
+      - name: Select Swift 6 toolchain
+        run: sudo xcode-select --switch /Applications/Xcode_16.2.app
       - name: Prepare isolated home
         run: |
           isolated_home="$RUNNER_TEMP/codex-balance-home"
