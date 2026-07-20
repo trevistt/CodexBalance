@@ -13,16 +13,20 @@ jobs:
     runs-on: macos-14
     timeout-minutes: 25
     env:
-      HOME: ${{ runner.temp }}/codex-balance-home
-      CODEX_HOME: ${{ runner.temp }}/codex-balance-home/.codex
-      CODEX_BALANCE_AUTH_PATH: ${{ runner.temp }}/codex-balance-home/no-auth.json
       CODEX_BALANCE_ENABLE_ADAPTIVE_REFRESH: "0"
     steps:
       - uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5
         with:
           persist-credentials: false
       - name: Prepare isolated home
-        run: mkdir -p "$HOME" "$CODEX_HOME"
+        run: |
+          isolated_home="$RUNNER_TEMP/codex-balance-home"
+          mkdir -p "$isolated_home/.codex"
+          {
+            echo "HOME=$isolated_home"
+            echo "CODEX_HOME=$isolated_home/.codex"
+            echo "CODEX_BALANCE_AUTH_PATH=$isolated_home/no-auth.json"
+          } >> "$GITHUB_ENV"
       - name: Validate shell
         run: find Scripts -type f -name '*.sh' -exec sh -n {} +
       - name: Scan public tree
