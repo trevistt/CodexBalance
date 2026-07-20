@@ -287,7 +287,7 @@ struct UsageCoreTests {
         UsageSnapshot(
             sessionPercentRemaining: session,
             weeklyPercentRemaining: weekly,
-            sessionResetAt: self.now.addingTimeInterval(3_600),
+            sessionResetAt: self.now.addingTimeInterval(7_200),
             weeklyResetAt: self.now.addingTimeInterval(5 * 86_400),
             source: source,
             updatedAt: self.now)
