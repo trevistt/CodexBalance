@@ -64,7 +64,7 @@ public struct UsagePace: Equatable, Sendable {
 public enum UsagePaceFormatter {
     public static func decisionText(_ pace: UsagePace) -> String {
         if !pace.lastsUntilReset {
-            return "Low quota"
+            return pace.elapsedWindowPercent < 5 ? "Early estimate" : "High burn rate"
         }
         switch pace.balance {
         case .reserve, .onTarget:
@@ -79,7 +79,7 @@ public enum UsagePaceFormatter {
         case let .reserve(value):
             "\(Self.roundedPercent(value))% in reserve"
         case let .deficit(value):
-            "\(Self.roundedPercent(value))% in deficit"
+            Self.targetComparisonText(value)
         case .onTarget:
             "On target"
         }
@@ -96,7 +96,12 @@ public enum UsagePaceFormatter {
         guard let projectedEmptyAt = pace.projectedEmptyAt else {
             return "Lasts until reset"
         }
-        return "Runs out in \(UsageSnapshot.countdown(to: projectedEmptyAt, now: now))"
+        return "At current pace, may run out in \(UsageSnapshot.countdown(to: projectedEmptyAt, now: now))"
+    }
+
+    private static func targetComparisonText(_ value: Double) -> String {
+        let points = Self.roundedPercent(value)
+        return "\(points) \(points == 1 ? "pt" : "pts") ahead of target"
     }
 
     private static func roundedPercent(_ value: Double) -> Int {

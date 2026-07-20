@@ -156,6 +156,30 @@ enum UISmokeCheck {
               expect(noResetPresentation.runway?.projectionText == "Projection unavailable", "missing reset does not invent a projection")
         else { return false }
 
+        let earlyEstimateSnapshot = UsageSnapshot(
+            sessionPercentRemaining: nil,
+            weeklyPercentRemaining: 97,
+            sessionResetAt: nil,
+            weeklyResetAt: now.addingTimeInterval(592_704),
+            source: .fixture,
+            updatedAt: now)
+        let earlyEstimatePresentation = DashboardPresentation(
+            snapshot: earlyEstimateSnapshot,
+            observation: UsageObservationState(),
+            isRefreshing: false,
+            now: now)
+        guard expect(earlyEstimatePresentation.runway?.remainingText == "97%", "early estimate preserves high remaining quota"),
+              expect(earlyEstimatePresentation.runway?.decisionText == "Early estimate", "early-cycle projection is labelled as an estimate"),
+              expect(earlyEstimatePresentation.runway?.balanceText == "1 pt ahead of target", "early estimate uses singular target comparison"),
+              expect(earlyEstimatePresentation.runway?.projectionText.hasPrefix("At current pace, may run out in") == true, "early estimate projection is probabilistic"),
+              expect(earlyEstimatePresentation.runway?.accessibilityText.contains("Weekly 97% remaining") == true, "runway AX includes remaining percentage"),
+              expect(earlyEstimatePresentation.runway?.accessibilityText.contains("Early estimate") == true, "runway AX includes estimate state"),
+              expect(earlyEstimatePresentation.runway?.accessibilityText.contains("1 pt ahead of target") == true, "runway AX includes target comparison"),
+              expect(earlyEstimatePresentation.runway?.accessibilityText.contains("At current pace, may run out in") == true, "runway AX includes probabilistic projection"),
+              expect(earlyEstimatePresentation.runway?.accessibilityText.contains("Low quota") == false, "high remaining quota is not labelled low"),
+              expect(earlyEstimatePresentation.runway?.accessibilityText.contains("in deficit") == false, "runway AX omits removed deficit wording")
+        else { return false }
+
         let weeklyOnly = UsageSnapshot(
             sessionPercentRemaining: nil,
             weeklyPercentRemaining: 43,
@@ -176,6 +200,15 @@ enum UISmokeCheck {
         let stalePresentation = UsageDisplayFormatter.menuBarPresentation(snapshot: stale, now: now)
         guard expect(stalePresentation.rows.allSatisfy { $0.value.hasSuffix("!") }, "stale marker"),
               expect(stalePresentation.accessibilityText.contains("cached stale"), "stale AX truth")
+        else { return false }
+
+        let staleDashboard = DashboardPresentation(
+            snapshot: stale,
+            observation: UsageObservationState(),
+            isRefreshing: false,
+            now: now)
+        guard expect(staleDashboard.runway?.accessibilityText.contains("CACHED") == true, "stale runway is accessibly cached"),
+              expect(staleDashboard.runway?.accessibilityText.contains("LIVE") == false, "stale runway is not presented as live")
         else { return false }
 
         let hardError = UsageSnapshot.error("Provider unavailable.", updatedAt: now)
@@ -270,7 +303,7 @@ enum UISmokeCheck {
             pinState: pinState,
             now: { now })
         RunLoop.main.run(until: Date().addingTimeInterval(0.05))
-        guard expect(controller.statusItemWidthForTesting() == 46, "status width is the readable 46pt target"),
+        guard expect(controller.statusItemWidthForTesting() == 54, "status width compactly accommodates the widest percentage"),
               expect(controller.menuBarValuesForTesting() == ["35%", "W 95%"], "custom meter mirrors snapshot"),
               expect(controller.menuBarHasBrandIconForTesting(), "meter uses packaged Codex Balance mark")
         else {
@@ -292,10 +325,19 @@ enum UISmokeCheck {
             return false
         }
 
-        usageStore.replaceSnapshotForTesting(weeklyOnly)
+        usageStore.replaceSnapshotForTesting(UsageSnapshot(
+            sessionPercentRemaining: nil,
+            weeklyPercentRemaining: 100,
+            sessionResetAt: nil,
+            weeklyResetAt: now.addingTimeInterval(4 * 86_400),
+            source: .fixture,
+            updatedAt: now))
         RunLoop.main.run(until: Date().addingTimeInterval(0.05))
-        guard expect(controller.menuBarValuesForTesting() == ["43%", "4d 0h"], "weekly-only meter shows reset countdown"),
-              expect(controller.menuBarTopFontSizeForTesting() >= 13, "weekly-only percentage uses large type")
+        guard expect(controller.menuBarValuesForTesting() == ["100%", "4d 0h"], "weekly-only meter shows the maximum percentage and reset countdown"),
+              expect(controller.menuBarTopFontSizeForTesting() >= 12.75, "weekly-only percentage preserves large type"),
+              expect(controller.menuBarTopValueFitsForTesting(), "weekly-only 100 percent value fits without clipping"),
+              expect(controller.menuBarSingleRowLayoutIsBalancedForTesting(), "single-row icon is centered beside right-aligned values"),
+              expect(controller.menuBarSingleRowIconGapForTesting() <= 8, "single-row icon stays visually close to the widest percentage")
         else {
             controller.invalidate()
             return false

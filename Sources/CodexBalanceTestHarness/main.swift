@@ -127,11 +127,37 @@ struct CodexBalanceTestHarness {
                 check(false, "Pace deficit classification")
             }
             check(!pace.lastsUntilReset, "Deficit run-out")
-            check(UsagePaceFormatter.projectionText(pace, now: now).hasPrefix("Runs out in"), "Run-out copy")
+            check(UsagePaceFormatter.decisionText(pace) == "High burn rate", "Mature high-burn copy")
+            check(UsagePaceFormatter.balanceText(pace) == "30 pts ahead of target", "Target comparison copy")
+            check(
+                UsagePaceFormatter.projectionText(pace, now: now)
+                    .hasPrefix("At current pace, may run out in"),
+                "Probabilistic run-out copy")
         } else {
             check(false, "Deficit pace exists")
             check(false, "Deficit run-out exists")
             check(false, "Deficit projection exists")
+            check(false, "Deficit target comparison exists")
+            check(false, "Deficit probabilistic copy exists")
+        }
+        if let early = UsagePace(window: UsageWindow(
+            usedPercent: 3,
+            resetAt: now.addingTimeInterval(9_800),
+            windowSeconds: 10_000), now: now)
+        {
+            check(early.elapsedWindowPercent == 2, "Early estimate elapsed threshold")
+            check(!early.lastsUntilReset, "Early estimate projected before reset")
+            check(UsagePaceFormatter.decisionText(early) == "Early estimate", "Early estimate headline")
+            check(UsagePaceFormatter.balanceText(early) == "1 pt ahead of target", "Singular target point")
+            check(!UsagePaceFormatter.decisionText(early).contains("Low quota"), "High remaining is not low quota")
+            check(!UsagePaceFormatter.balanceText(early).contains("in deficit"), "Removed deficit wording")
+        } else {
+            check(false, "Early estimate pace exists")
+            check(false, "Early estimate projection exists")
+            check(false, "Early estimate headline exists")
+            check(false, "Singular target point exists")
+            check(false, "Early estimate low quota check exists")
+            check(false, "Early estimate deficit check exists")
         }
         check(UsageSnapshot.countdown(to: now.addingTimeInterval(60.1), now: now) == "1m", "Countdown ceil")
         check(UsageSnapshot.countdown(to: now.addingTimeInterval(0.1), now: now) == "<1m", "Countdown sub-minute")

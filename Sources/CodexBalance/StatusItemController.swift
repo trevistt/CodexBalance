@@ -5,7 +5,7 @@ import SwiftUI
 
 @MainActor
 final class StatusItemController: NSObject {
-    static let statusItemWidth: CGFloat = 46
+    static let statusItemWidth: CGFloat = 54
 
     private let usageStore: UsageStore
     private let scheduler: RefreshScheduler
@@ -77,6 +77,18 @@ final class StatusItemController: NSObject {
 
     func menuBarTopFontSizeForTesting() -> CGFloat {
         self.meterView.topFontSizeForTesting()
+    }
+
+    func menuBarTopValueFitsForTesting() -> Bool {
+        self.meterView.topValueFitsForTesting()
+    }
+
+    func menuBarSingleRowLayoutIsBalancedForTesting() -> Bool {
+        self.meterView.singleRowLayoutIsBalancedForTesting()
+    }
+
+    func menuBarSingleRowIconGapForTesting() -> CGFloat {
+        self.meterView.singleRowIconGapForTesting()
     }
 
     func menuBarHasBrandIconForTesting() -> Bool {
@@ -576,6 +588,37 @@ final class MenuBarMeterView: NSView {
         self.topLabel.font?.pointSize ?? 0
     }
 
+    func topValueFitsForTesting() -> Bool {
+        self.layoutSubtreeIfNeeded()
+        let requiredWidth = ceil(self.topLabel.cell?.cellSize.width
+            ?? self.topLabel.attributedStringValue.size().width)
+        return requiredWidth <= floor(self.topLabel.bounds.width)
+    }
+
+    func singleRowLayoutIsBalancedForTesting() -> Bool {
+        self.layoutSubtreeIfNeeded()
+        let drawingBounds = self.topLabel.cell?.drawingRect(forBounds: self.topLabel.bounds)
+            ?? self.topLabel.bounds
+        let glyphMinX = self.topLabel.frame.minX
+            + drawingBounds.maxX
+            - self.topLabel.attributedStringValue.size().width
+        return abs(self.iconView.frame.midY - self.bounds.midY) <= 0.5
+            && self.iconView.frame.maxX <= glyphMinX + 0.5
+            && abs(self.topLabel.frame.maxX - self.bottomMarker.frame.maxX) <= 0.5
+            && self.topLabel.alignment == .right
+            && self.bottomMarker.alignment == .right
+    }
+
+    func singleRowIconGapForTesting() -> CGFloat {
+        self.layoutSubtreeIfNeeded()
+        let drawingBounds = self.topLabel.cell?.drawingRect(forBounds: self.topLabel.bounds)
+            ?? self.topLabel.bounds
+        let glyphMinX = self.topLabel.frame.minX
+            + drawingBounds.maxX
+            - self.topLabel.attributedStringValue.size().width
+        return glyphMinX - self.iconView.frame.maxX
+    }
+
     func hasBrandIconForTesting() -> Bool {
         self.iconView.image != nil && AppBrandIcon.isAvailable
     }
@@ -584,19 +627,31 @@ final class MenuBarMeterView: NSView {
         super.layout()
         let rows = self.presentation.rows
         let hasTwoRows = rows.count > 1
+        let availableWidth = self.bounds.width
+        let singleRowIconSize: CGFloat = 14
+        let singleRowIconX: CGFloat = 1.5
+        let centeredIconY = (self.bounds.height - singleRowIconSize) / 2
         if hasTwoRows {
             self.iconView.frame = NSRect(x: 0, y: 11, width: 9, height: 9)
-            self.topLabel.frame = NSRect(x: 11, y: 9.5, width: 34, height: 11)
+            self.topLabel.frame = NSRect(x: 11, y: 9.5, width: max(0, availableWidth - 11), height: 11)
             self.bottomMarker.frame = NSRect(x: 1, y: 0.5, width: 10, height: 10)
-            self.bottomLabel.frame = NSRect(x: 12, y: 0, width: 34, height: 11)
+            self.bottomLabel.frame = NSRect(x: 12, y: 0, width: max(0, availableWidth - 12), height: 11)
         } else if rows.first?.resetText != nil {
-            self.iconView.frame = NSRect(x: 0, y: 10, width: 11, height: 11)
-            self.topLabel.frame = NSRect(x: 13, y: 7.5, width: 33, height: 15)
-            self.bottomMarker.frame = NSRect(x: 0, y: -0.5, width: 46, height: 10)
+            self.iconView.frame = NSRect(
+                x: singleRowIconX,
+                y: centeredIconY,
+                width: singleRowIconSize,
+                height: singleRowIconSize)
+            self.topLabel.frame = NSRect(x: 11, y: 7.5, width: max(0, availableWidth - 11), height: 15)
+            self.bottomMarker.frame = NSRect(x: 11, y: -0.5, width: max(0, availableWidth - 11), height: 10)
             self.bottomLabel.frame = .zero
         } else {
-            self.iconView.frame = NSRect(x: 0, y: 6, width: 12, height: 12)
-            self.topLabel.frame = NSRect(x: 14, y: 3.5, width: 32, height: 17)
+            self.iconView.frame = NSRect(
+                x: singleRowIconX,
+                y: centeredIconY,
+                width: singleRowIconSize,
+                height: singleRowIconSize)
+            self.topLabel.frame = NSRect(x: 11, y: 3.5, width: max(0, availableWidth - 11), height: 17)
             self.bottomMarker.frame = .zero
             self.bottomLabel.frame = .zero
         }
@@ -608,7 +663,7 @@ final class MenuBarMeterView: NSView {
         self.setAccessibilityRole(.staticText)
         self.setAccessibilityIdentifier("codexbalance.status-meter")
 
-        self.iconView.image = AppBrandIcon.image(size: 10)
+        self.iconView.image = AppBrandIcon.image(size: 14)
         self.iconView.imageScaling = .scaleProportionallyDown
         self.iconView.contentTintColor = .labelColor
         self.addSubview(self.iconView)
@@ -640,14 +695,17 @@ final class MenuBarMeterView: NSView {
             self.bottomLabel.isHidden = false
         } else if let row = rows.first {
             let hasReset = row.resetText != nil
+            let usesLongValue = row.value.count >= 4
+            let topFontSize: CGFloat = usesLongValue ? 12.75 : (hasReset ? 13 : 14)
             self.topLabel.font = .monospacedDigitSystemFont(
-                ofSize: hasReset ? 13 : 14,
+                ofSize: topFontSize,
                 weight: .bold)
+            self.topLabel.alignment = .right
             self.topLabel.stringValue = row.value
             self.topLabel.isHidden = false
             self.bottomMarker.font = .monospacedDigitSystemFont(ofSize: 8.5, weight: .semibold)
             self.bottomMarker.textColor = NSColor.labelColor.withAlphaComponent(0.82)
-            self.bottomMarker.alignment = .center
+            self.bottomMarker.alignment = .right
             self.bottomMarker.stringValue = row.resetText ?? ""
             self.bottomMarker.isHidden = !hasReset
             self.bottomLabel.isHidden = true

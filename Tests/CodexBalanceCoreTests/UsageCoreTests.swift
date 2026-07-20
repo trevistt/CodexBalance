@@ -106,9 +106,51 @@ struct UsageCoreTests {
                 windowSeconds: 18_000),
             now: self.now)
         #expect(deficit?.lastsUntilReset == false)
-        #expect(UsagePaceFormatter.projectionText(deficit!, now: self.now).hasPrefix("Runs out in"))
+        #expect(UsagePaceFormatter.decisionText(deficit!) == "High burn rate")
+        #expect(UsagePaceFormatter.balanceText(deficit!) == "30 pts ahead of target")
+        #expect(UsagePaceFormatter.projectionText(deficit!, now: self.now)
+            .hasPrefix("At current pace, may run out in"))
         #expect(UsageSnapshot.countdown(to: self.now.addingTimeInterval(60.1), now: self.now) == "1m")
         #expect(UsageSnapshot.countdown(to: self.now.addingTimeInterval(0.1), now: self.now) == "<1m")
+    }
+
+    @Test
+    func earlyEstimateUsesProbabilisticTargetCopy() {
+        let pace = UsagePace(
+            window: UsageWindow(
+                usedPercent: 3,
+                resetAt: self.now.addingTimeInterval(9_800),
+                windowSeconds: 10_000),
+            now: self.now)
+        #expect(pace != nil)
+        #expect(pace?.elapsedWindowPercent == 2)
+        #expect(pace?.lastsUntilReset == false)
+        #expect(UsagePaceFormatter.decisionText(pace!) == "Early estimate")
+        #expect(UsagePaceFormatter.balanceText(pace!) == "1 pt ahead of target")
+        let projection = UsagePaceFormatter.projectionText(pace!, now: self.now)
+        #expect(projection.hasPrefix("At current pace, may run out in"))
+        #expect(!UsagePaceFormatter.decisionText(pace!).contains("Low quota"))
+        #expect(!UsagePaceFormatter.balanceText(pace!).contains("in deficit"))
+    }
+
+    @Test
+    func healthyOnTargetAndMissingResetRemainTruthful() {
+        let onTarget = UsagePace(
+            window: UsageWindow(
+                usedPercent: 50,
+                resetAt: self.now.addingTimeInterval(9_000),
+                windowSeconds: 18_000),
+            now: self.now)
+        #expect(onTarget != nil)
+        #expect(onTarget?.balance == .onTarget)
+        #expect(UsagePaceFormatter.decisionText(onTarget!) == "Can keep working")
+        #expect(UsagePaceFormatter.balanceText(onTarget!) == "On target")
+        #expect(UsagePaceFormatter.projectionText(onTarget!, now: self.now) == "Lasts until reset")
+
+        let missingReset = UsagePace(
+            window: UsageWindow(usedPercent: 10, resetAt: nil, windowSeconds: 18_000),
+            now: self.now)
+        #expect(missingReset == nil)
     }
 
     @Test

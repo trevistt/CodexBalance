@@ -14,7 +14,7 @@ Mac is locked or asleep, applies jitter, and respects source cooldowns.
 ## What it shows
 
 - Session, Weekly, and additional supported quota windows
-- runway, reserve or deficit, reset countdowns, and freshness
+- runway, target pace comparison, reset countdowns, and freshness
 - local 7/14/30-day token activity, model mix, recent work, and estimated cost
 - sanitized diagnostics without tokens, raw records, or credential paths
 - synthetic loading, stale, unavailable, error, contrast, and size fixtures
@@ -73,4 +73,4 @@ OpenAI logo.
 - [Security](SECURITY.md)
 - [Contributing](CONTRIBUTING.md)
 
-Source version: `0.1.0`.
+Source version: `0.1.1`.

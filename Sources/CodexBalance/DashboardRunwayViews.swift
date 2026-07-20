@@ -13,6 +13,20 @@ struct DashboardRunwayPresentation: Equatable {
     let resetAt: Date?
     let isStale: Bool
 
+    var accessibilityText: String {
+        [
+            "\(self.windowLabel) \(self.remainingText) remaining",
+            self.isStale ? "CACHED" : "LIVE",
+            self.decisionText,
+            self.balanceText,
+            self.projectionText,
+            self.projectionRelationText,
+            self.resetText,
+        ]
+        .compactMap { $0 }
+        .joined(separator: ". ")
+    }
+
     init?(row: DashboardQuotaRowPresentation, isStale: Bool, now: Date) {
         guard let remaining = row.row.remainingPercent else { return nil }
         self.windowLabel = row.row.label
@@ -110,6 +124,8 @@ struct DashboardRunwayHeroView: View {
                 .accessibilityIdentifier("codexbalance.dashboard.runway-status")
             }
         }
+        .accessibilityElement(children: .ignore)
+        .accessibilityLabel(runway.accessibilityText)
     }
 
     private var unavailable: some View {
@@ -161,19 +177,21 @@ private struct DashboardRunwayTrack: View {
                 }
             }
             .frame(height: self.displayAccessibility.increaseContrast ? 7 : 6)
-            HStack(alignment: .top) {
+            HStack(alignment: .top, spacing: 8) {
                 Text("Now")
-                Spacer()
+                    .frame(width: 30, alignment: .leading)
                 VStack(spacing: 1) {
                     Text(self.runway.projectionText)
                         .fontWeight(.semibold)
+                        .fixedSize(horizontal: false, vertical: true)
                     if let relation = self.runway.projectionRelationText {
                         Text(relation)
                     }
                 }
                 .multilineTextAlignment(.center)
-                Spacer()
+                .frame(maxWidth: .infinity)
                 Text(self.runway.resetAt == nil ? "Reset unavailable" : "Reset")
+                    .frame(width: 70, alignment: .trailing)
             }
             .font(.system(size: 10.5))
             .foregroundStyle(DashboardDesignTokens.secondaryText)

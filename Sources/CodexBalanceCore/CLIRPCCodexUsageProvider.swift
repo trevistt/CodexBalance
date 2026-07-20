@@ -91,7 +91,7 @@ private final class RPCClient {
     func initialize() throws {
         let _: EmptyRPCResult = try self.request(
             method: "initialize",
-            params: ["clientInfo": ["name": "codex-balance", "version": "0.1.0"]],
+            params: ["clientInfo": ["name": "codex-balance", "version": "0.1.1"]],
             timeout: self.initializeTimeout)
         try self.sendNotification(method: "initialized")
     }

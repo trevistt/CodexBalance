@@ -127,7 +127,7 @@ public struct OAuthCodexUsageProvider<Client: UsageHTTPClient>: CodexUsageProvid
         request.httpMethod = "GET"
         request.timeoutInterval = 20
         request.setValue("Bearer \(credentials.accessToken)", forHTTPHeaderField: "Authorization")
-        request.setValue("CodexBalance/0.1.0", forHTTPHeaderField: "User-Agent")
+        request.setValue("CodexBalance/0.1.1", forHTTPHeaderField: "User-Agent")
         request.setValue("application/json", forHTTPHeaderField: "Accept")
         if let accountId = credentials.accountId, !accountId.isEmpty {
             request.setValue(accountId, forHTTPHeaderField: "ChatGPT-Account-Id")
