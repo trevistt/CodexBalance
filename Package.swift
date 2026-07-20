@@ -4,11 +4,9 @@ import PackageDescription
 
 let usesCommandLineTools = !FileManager.default.fileExists(
     atPath: "/Applications/Xcode.app/Contents/Developer")
-let testingSwiftSettings: [SwiftSetting] = [
-    .enableUpcomingFeature("StrictConcurrency"),
-] + (usesCommandLineTools ? [
+let testingSwiftSettings: [SwiftSetting] = usesCommandLineTools ? [
     .unsafeFlags(["-F", "/Library/Developer/CommandLineTools/Library/Developer/Frameworks"]),
-] : [])
+] : []
 let testingLinkerSettings: [LinkerSetting] = (usesCommandLineTools ? [
     .unsafeFlags([
         "-F", "/Library/Developer/CommandLineTools/Library/Developer/Frameworks",
@@ -33,9 +31,6 @@ let package = Package(
     targets: [
         .target(
             name: "CodexBalanceCore",
-            swiftSettings: [
-                .enableUpcomingFeature("StrictConcurrency"),
-            ],
             linkerSettings: [
                 .linkedLibrary("sqlite3"),
             ]),
@@ -44,16 +39,10 @@ let package = Package(
             dependencies: ["CodexBalanceCore"],
             resources: [
                 .process("Resources"),
-            ],
-            swiftSettings: [
-                .enableUpcomingFeature("StrictConcurrency"),
             ]),
         .executableTarget(
             name: "CodexBalanceTestHarness",
             dependencies: ["CodexBalanceCore"],
-            swiftSettings: [
-                .enableUpcomingFeature("StrictConcurrency"),
-            ],
             linkerSettings: [
                 .linkedLibrary("sqlite3"),
             ]),
