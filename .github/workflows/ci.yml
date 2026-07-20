@@ -1,0 +1,41 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+permissions:
+  contents: read
+
+jobs:
+  validate:
+    runs-on: macos-14
+    timeout-minutes: 25
+    env:
+      HOME: ${{ runner.temp }}/codex-balance-home
+      CODEX_HOME: ${{ runner.temp }}/codex-balance-home/.codex
+      CODEX_BALANCE_AUTH_PATH: ${{ runner.temp }}/codex-balance-home/no-auth.json
+      CODEX_BALANCE_ENABLE_ADAPTIVE_REFRESH: "0"
+    steps:
+      - uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5
+        with:
+          persist-credentials: false
+      - name: Prepare isolated home
+        run: mkdir -p "$HOME" "$CODEX_HOME"
+      - name: Validate shell
+        run: find Scripts -type f -name '*.sh' -exec sh -n {} +
+      - name: Scan public tree
+        run: Scripts/public_safety_scan.sh
+      - name: Build
+        run: swift build
+      - name: Build and run Swift tests when supported
+        run: swift test --enable-swift-testing --disable-xctest
+      - name: Run deterministic harness
+        run: Scripts/test.sh
+      - name: Package ad-hoc app
+        run: Scripts/package_app.sh
+      - name: Verify package and smoke check
+        run: |
+          Scripts/status_signing.sh
+          dist/CodexBalance.app/Contents/MacOS/CodexBalance --smoke-check

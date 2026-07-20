@@ -1,0 +1,24 @@
+name: Feature request
+description: Propose a focused improvement.
+title: "[Feature]: "
+labels: [enhancement]
+body:
+  - type: textarea
+    id: problem
+    attributes:
+      label: Problem to solve
+    validations:
+      required: true
+  - type: textarea
+    id: outcome
+    attributes:
+      label: Desired user outcome
+    validations:
+      required: true
+  - type: dropdown
+    id: privacy
+    attributes:
+      label: Does this add a data source, credential path, network call, or background service?
+      options: ["No", "Yes"]
+    validations:
+      required: true
