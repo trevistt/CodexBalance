@@ -87,7 +87,7 @@ final class DashboardRefreshCoordinator: ObservableObject {
 /// updates and callbacks stay here; child sections receive presentation values.
 struct HoverPanelView: View {
     static let panelWidth: CGFloat = 376
-    static let naturalHeight: CGFloat = 820
+    static let naturalHeight: CGFloat = 860
     static let minimumHeight: CGFloat = 560
 
     static func preferredHeight(

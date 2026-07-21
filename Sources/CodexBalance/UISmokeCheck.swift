@@ -227,13 +227,14 @@ enum UISmokeCheck {
 
         let frame = StatusPanelPositioner.origin(
             statusItemFrame: NSRect(x: 1_330, y: 880, width: 42, height: 22),
-            panelSize: NSSize(width: HoverPanelView.panelWidth, height: 820),
-            visibleFrame: NSRect(x: 0, y: 0, width: 1_440, height: 878))
+            panelSize: NSSize(width: HoverPanelView.panelWidth, height: HoverPanelView.naturalHeight),
+            visibleFrame: NSRect(x: 0, y: 0, width: 1_440, height: 918))
         guard expect(frame.x >= 8, "panel left containment"),
               expect(frame.x + HoverPanelView.panelWidth <= 1_432, "panel right containment"),
               expect(frame.y >= 8, "panel bottom containment"),
-              expect(frame.y + 820 <= 878, "panel top containment"),
+              expect(frame.y + HoverPanelView.naturalHeight <= 918, "panel top containment"),
               expect(HoverPanelView.panelWidth == 376, "dashboard uses the planned 376pt width"),
+              expect(HoverPanelView.naturalHeight == 860, "full dashboard uses the expanded 860pt height"),
               expect(AppBrandIcon.isAvailable, "Codex Balance brand mark available")
         else { return false }
 
